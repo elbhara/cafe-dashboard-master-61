@@ -1,7 +1,9 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { Coffee } from "lucide-react";
+import { Coffee, ShoppingCart } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Product {
   id: string;
@@ -11,6 +13,7 @@ interface Product {
   image: string;
   category: string;
   stock: number;
+  sku: string;
 }
 
 interface Category {
@@ -22,6 +25,7 @@ const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const { toast } = useToast();
 
   useEffect(() => {
     const storedProducts = localStorage.getItem("products");
@@ -37,6 +41,41 @@ const Index = () => {
   const filteredProducts = selectedCategory === "all" 
     ? products 
     : products.filter(product => product.category === selectedCategory);
+
+  const addToCart = (product: Product) => {
+    if (product.stock <= 0) {
+      toast({
+        title: "Out of stock",
+        description: "This product is currently out of stock.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const cartItems = JSON.parse(localStorage.getItem("cartItems") || "[]");
+    const existingItem = cartItems.find((item: Product) => item.id === product.id);
+
+    if (existingItem) {
+      if (existingItem.quantity >= product.stock) {
+        toast({
+          title: "Stock limit reached",
+          description: "You cannot add more of this item due to stock limitations.",
+          variant: "destructive"
+        });
+        return;
+      }
+      existingItem.quantity += 1;
+    } else {
+      cartItems.push({ ...product, quantity: 1 });
+    }
+
+    localStorage.setItem("cartItems", JSON.stringify(cartItems));
+    
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart.`
+    });
+  };
 
   return (
     <MainLayout>
@@ -92,6 +131,14 @@ const Index = () => {
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-lg text-gray-900">{product.name}</h3>
                   <p className="text-sm text-gray-500 mt-1">{product.description}</p>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                    <p className="text-sm text-gray-500">
+                      Stock: <span className={product.stock <= 5 ? "text-red-500 font-medium" : ""}>
+                        {product.stock} units
+                      </span>
+                    </p>
+                  </div>
                   <div className="mt-4 flex items-center justify-between">
                     <span className="text-lg font-bold text-primary">
                       {new Intl.NumberFormat('id-ID', {
@@ -99,9 +146,14 @@ const Index = () => {
                         currency: 'IDR'
                       }).format(product.price)}
                     </span>
-                    <span className="text-sm text-gray-500">
-                      Stock: {product.stock}
-                    </span>
+                    <Button
+                      onClick={() => addToCart(product)}
+                      disabled={product.stock <= 0}
+                      variant={product.stock <= 0 ? "secondary" : "default"}
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
