@@ -1,19 +1,13 @@
-import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Coffee, ShoppingCart, Tag, Package } from "lucide-react";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ShoppingCart, Plus, Search } from "lucide-react";
+import { useState } from "react";
 
-// Temporary product data (will be replaced with API data later)
-const products = [
+// Temporary data until we implement backend
+const PRODUCTS = [
   {
     id: 1,
     name: "Cappuccino",
@@ -21,30 +15,39 @@ const products = [
     category: "Beverages",
     sku: "BEV001",
     stock: 100,
-    image: "/placeholder.svg",
-    description: "Rich and creamy cappuccino with perfect foam",
+    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
   },
   {
     id: 2,
-    name: "Croissant",
-    price: 25000,
-    category: "Pastries",
-    sku: "PST001",
-    stock: 50,
-    image: "/placeholder.svg",
-    description: "Freshly baked butter croissant",
+    name: "Latte",
+    price: 38000,
+    category: "Beverages",
+    sku: "BEV002",
+    stock: 100,
+    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
   },
   // Add more products as needed
 ];
 
+const CATEGORIES = ["All", "Beverages", "Food", "Desserts"];
+
 const Products = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-  const totalPages = Math.ceil(products.length / itemsPerPage);
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = products.slice(startIndex, endIndex);
+  const filteredProducts = PRODUCTS.filter(
+    (product) =>
+      (selectedCategory === "All" || product.category === selectedCategory) &&
+      product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const currentProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <MainLayout>
@@ -52,77 +55,75 @@ const Products = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold">Products</h1>
           <Button>
-            <ShoppingCart className="mr-2" />
-            View Cart
+            <Plus className="mr-2 h-4 w-4" />
+            Add New Product
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {currentProducts.map((product) => (
-            <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={product.id} className="overflow-hidden">
               <img
                 src={product.image}
                 alt={product.name}
                 className="w-full h-48 object-cover"
               />
-              <CardContent className="p-4 space-y-4">
-                <div>
-                  <h3 className="font-semibold text-lg">{product.name}</h3>
-                  <p className="text-sm text-gray-500">{product.description}</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Coffee className="h-4 w-4" />
-                    <span>{product.category}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Tag className="h-4 w-4" />
-                    <span>SKU: {product.sku}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Package className="h-4 w-4" />
-                    <span>Stock: {product.stock}</span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center pt-2">
-                  <span className="font-semibold text-lg">
-                    Rp {product.price.toLocaleString()}
-                  </span>
-                  <Button size="sm">Add to Cart</Button>
-                </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold">{product.name}</h3>
+                <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                <p className="text-sm text-gray-500">Stock: {product.stock}</p>
+                <p className="font-medium mt-2">
+                  Rp {product.price.toLocaleString()}
+                </p>
               </CardContent>
+              <CardFooter className="p-4 pt-0">
+                <Button className="w-full">
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Add to Cart
+                </Button>
+              </CardFooter>
             </Card>
           ))}
         </div>
 
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-            {[...Array(totalPages)].map((_, i) => (
-              <PaginationItem key={i + 1}>
-                <PaginationLink
-                  onClick={() => setCurrentPage(i + 1)}
-                  isActive={currentPage === i + 1}
-                >
-                  {i + 1}
-                </PaginationLink>
-              </PaginationItem>
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-6">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
             ))}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+          </div>
+        )}
       </div>
     </MainLayout>
   );
