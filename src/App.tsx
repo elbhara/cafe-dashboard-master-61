@@ -1,35 +1,30 @@
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import Products from "./pages/Products";
-import Cart from "./pages/Cart";
-import Discounts from "./pages/Discounts";
-import Users from "./pages/Users";
-
-const queryClient = new QueryClient();
+import Index from "@/pages/Index";
+import Products from "@/pages/Products";
+import Categories from "@/pages/Categories";
+import Cart from "@/pages/Cart";
+import Users from "@/pages/Users";
+import Settings from "@/pages/Settings";
+import SalesReport from "@/pages/SalesReport";
+import Payment from "@/pages/Payment";
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/discounts" element={<Discounts />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/print" element={<Index />} />
-            <Route path="/settings" element={<Index />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/catalog" element={<Index />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/sales-report" element={<SalesReport />} />
+        <Route path="/payment" element={<Payment />} />
+      </Routes>
+      <Toaster />
+    </Router>
   );
 }
 
