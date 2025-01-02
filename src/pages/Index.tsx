@@ -1,8 +1,14 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
-import { Coffee, ShoppingCart } from "lucide-react";
+import { Coffee, ShoppingCart, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface Product {
@@ -25,6 +31,7 @@ const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -120,33 +127,44 @@ const Index = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <Card key={product.id} className="hover:shadow-lg transition-shadow duration-200">
-                <div className="aspect-square w-full overflow-hidden rounded-t-lg">
+              <Card key={product.id} className="flex flex-col hover:shadow-lg transition-shadow duration-200">
+                <div 
+                  className="aspect-square w-full overflow-hidden rounded-t-lg cursor-pointer"
+                  onClick={() => setSelectedProduct(product)}
+                >
                   <img
                     src={product.image || "https://via.placeholder.com/300"}
                     alt={product.name}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover hover:scale-105 transition-transform duration-200"
                   />
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-lg text-gray-900">{product.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{product.description}</p>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                    <p className="text-sm text-gray-500">
-                      Stock: <span className={product.stock <= 5 ? "text-red-500 font-medium" : ""}>
-                        {product.stock} units
-                      </span>
-                    </p>
+                <CardContent className="p-4 flex flex-col flex-grow">
+                  <div className="flex-grow">
+                    <h3 
+                      className="font-semibold text-lg text-gray-900 cursor-pointer hover:text-primary"
+                      onClick={() => setSelectedProduct(product)}
+                    >
+                      {product.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{product.description}</p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                      <p className="text-sm text-gray-500">
+                        Stock: <span className={product.stock <= 5 ? "text-red-500 font-medium" : ""}>
+                          {product.stock} units
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-lg font-bold text-primary">
+                  <div className="mt-4 space-y-3">
+                    <p className="text-xl font-bold text-primary">
                       {new Intl.NumberFormat('id-ID', {
                         style: 'currency',
                         currency: 'IDR'
                       }).format(product.price)}
-                    </span>
+                    </p>
                     <Button
+                      className="w-full"
                       onClick={() => addToCart(product)}
                       disabled={product.stock <= 0}
                       variant={product.stock <= 0 ? "secondary" : "default"}
@@ -160,6 +178,70 @@ const Index = () => {
             ))}
           </div>
         )}
+
+        <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
+          {selectedProduct && (
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle className="text-2xl">{selectedProduct.name}</DialogTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-4 top-4"
+                  onClick={() => setSelectedProduct(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="aspect-square overflow-hidden rounded-lg">
+                    <img
+                      src={selectedProduct.image || "https://via.placeholder.com/500"}
+                      alt={selectedProduct.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-semibold text-gray-500">Description</h3>
+                    <p className="mt-2 text-gray-700">{selectedProduct.description}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-500">SKU: {selectedProduct.sku}</p>
+                    <p className="text-sm text-gray-500">Category: {selectedProduct.category}</p>
+                    <p className="text-sm text-gray-500">
+                      Stock: <span className={selectedProduct.stock <= 5 ? "text-red-500 font-medium" : ""}>
+                        {selectedProduct.stock} units
+                      </span>
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    <p className="text-2xl font-bold text-primary">
+                      {new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR'
+                      }).format(selectedProduct.price)}
+                    </p>
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        addToCart(selectedProduct);
+                        setSelectedProduct(null);
+                      }}
+                      disabled={selectedProduct.stock <= 0}
+                      variant={selectedProduct.stock <= 0 ? "secondary" : "default"}
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      {selectedProduct.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          )}
+        </Dialog>
       </div>
     </MainLayout>
   );
