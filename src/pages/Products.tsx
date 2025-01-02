@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ShoppingCart, Plus, Search } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 // Temporary data until we implement backend
 const PRODUCTS = [
@@ -35,6 +36,7 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast();
   const itemsPerPage = 8;
 
   const filteredProducts = PRODUCTS.filter(
@@ -48,6 +50,33 @@ const Products = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const addToCart = (product: typeof PRODUCTS[0]) => {
+    // Get existing cart items from localStorage
+    const existingCartItems = JSON.parse(localStorage.getItem("cartItems") || "[]");
+    
+    // Check if the product is already in the cart
+    const existingItemIndex = existingCartItems.findIndex(
+      (item: typeof PRODUCTS[0]) => item.id === product.id
+    );
+
+    if (existingItemIndex !== -1) {
+      // If product exists, increment quantity
+      existingCartItems[existingItemIndex].quantity += 1;
+    } else {
+      // If product doesn't exist, add it with quantity 1
+      existingCartItems.push({ ...product, quantity: 1 });
+    }
+
+    // Save updated cart back to localStorage
+    localStorage.setItem("cartItems", JSON.stringify(existingCartItems));
+
+    // Show success toast
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
 
   return (
     <MainLayout>
@@ -101,7 +130,10 @@ const Products = () => {
                 </p>
               </CardContent>
               <CardFooter className="p-4 pt-0">
-                <Button className="w-full">
+                <Button 
+                  className="w-full"
+                  onClick={() => addToCart(product)}
+                >
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   Add to Cart
                 </Button>
