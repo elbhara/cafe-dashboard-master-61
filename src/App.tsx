@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Products from "./pages/Products";
 import Cart from "./pages/Cart";
 import Discounts from "./pages/Discounts";
+import Users from "./pages/Users";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ function App() {
             <Route path="/products" element={<Products />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/discounts" element={<Discounts />} />
+            <Route path="/users" element={<Users />} />
             <Route path="/print" element={<Index />} />
             <Route path="/settings" element={<Index />} />
           </Routes>

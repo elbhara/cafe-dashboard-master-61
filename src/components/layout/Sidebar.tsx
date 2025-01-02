@@ -5,6 +5,7 @@ import {
   ShoppingCart,
   Percent,
   Settings,
+  Users,
 } from "lucide-react";
 
 const links = [
@@ -12,6 +13,7 @@ const links = [
   { to: "/products", icon: Coffee, label: "Products" },
   { to: "/cart", icon: ShoppingCart, label: "Cart" },
   { to: "/discounts", icon: Percent, label: "Discounts" },
+  { to: "/users", icon: Users, label: "Users" },
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
