@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, Search } from "lucide-react";
+import { ShoppingCart, Search, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { AddProductDialog } from "@/components/AddProductDialog";
+import { EditProductDialog } from "@/components/EditProductDialog";
 
 const CATEGORIES = ["All", "Beverages", "Food", "Desserts"];
 
@@ -19,10 +20,13 @@ const Products = () => {
   const itemsPerPage = 8;
 
   useEffect(() => {
-    // Load products from localStorage
+    loadProducts();
+  }, []);
+
+  const loadProducts = () => {
     const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
     setProducts(storedProducts);
-  }, []);
+  };
 
   const filteredProducts = products.filter(
     (product) =>
@@ -35,6 +39,17 @@ const Products = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const deleteProduct = (productId: string) => {
+    const updatedProducts = products.filter(product => product.id !== productId);
+    localStorage.setItem("products", JSON.stringify(updatedProducts));
+    setProducts(updatedProducts);
+    
+    toast({
+      title: "Product deleted",
+      description: "The product has been deleted successfully."
+    });
+  };
 
   const addToCart = (product: any) => {
     const existingCartItems = JSON.parse(localStorage.getItem("cartItems") || "[]");
@@ -104,13 +119,21 @@ const Products = () => {
                   Rp {product.price.toLocaleString()}
                 </p>
               </CardContent>
-              <CardFooter className="p-4 pt-0">
+              <CardFooter className="p-4 pt-0 flex gap-2">
                 <Button 
-                  className="w-full"
+                  className="flex-1"
                   onClick={() => addToCart(product)}
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   Add to Cart
+                </Button>
+                <EditProductDialog product={product} onUpdate={loadProducts} />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => deleteProduct(product.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </CardFooter>
             </Card>
