@@ -3,32 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, Search } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
-
-// Temporary data until we implement backend
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Cappuccino",
-    price: 35000,
-    category: "Beverages",
-    sku: "BEV001",
-    stock: 100,
-    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
-  },
-  {
-    id: 2,
-    name: "Latte",
-    price: 38000,
-    category: "Beverages",
-    sku: "BEV002",
-    stock: 100,
-    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
-  },
-  // Add more products as needed
-];
+import { AddProductDialog } from "@/components/AddProductDialog";
 
 const CATEGORIES = ["All", "Beverages", "Food", "Desserts"];
 
@@ -36,10 +14,17 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [products, setProducts] = useState<any[]>([]);
   const { toast } = useToast();
   const itemsPerPage = 8;
 
-  const filteredProducts = PRODUCTS.filter(
+  useEffect(() => {
+    // Load products from localStorage
+    const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+    setProducts(storedProducts);
+  }, []);
+
+  const filteredProducts = products.filter(
     (product) =>
       (selectedCategory === "All" || product.category === selectedCategory) &&
       product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -51,27 +36,20 @@ const Products = () => {
     currentPage * itemsPerPage
   );
 
-  const addToCart = (product: typeof PRODUCTS[0]) => {
-    // Get existing cart items from localStorage
+  const addToCart = (product: any) => {
     const existingCartItems = JSON.parse(localStorage.getItem("cartItems") || "[]");
-    
-    // Check if the product is already in the cart
     const existingItemIndex = existingCartItems.findIndex(
-      (item: typeof PRODUCTS[0]) => item.id === product.id
+      (item: any) => item.id === product.id
     );
 
     if (existingItemIndex !== -1) {
-      // If product exists, increment quantity
       existingCartItems[existingItemIndex].quantity += 1;
     } else {
-      // If product doesn't exist, add it with quantity 1
       existingCartItems.push({ ...product, quantity: 1 });
     }
 
-    // Save updated cart back to localStorage
     localStorage.setItem("cartItems", JSON.stringify(existingCartItems));
 
-    // Show success toast
     toast({
       title: "Added to cart",
       description: `${product.name} has been added to your cart.`,
@@ -83,10 +61,7 @@ const Products = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold">Products</h1>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Product
-          </Button>
+          <AddProductDialog />
         </div>
 
         <div className="flex gap-4 items-center">

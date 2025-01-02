@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,33 +11,36 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Minus, Plus, X, CreditCard, Percent } from "lucide-react";
+import { Minus, Plus, X, Percent } from "lucide-react";
+import { PaymentDialog } from "@/components/PaymentDialog";
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Cappuccino",
-      price: 35000,
-      quantity: 2,
-    },
-    // Add more items as needed
-  ]);
-
+  const [cartItems, setCartItems] = useState<any[]>([]);
   const [discountCode, setDiscountCode] = useState("");
+
+  useEffect(() => {
+    const items = JSON.parse(localStorage.getItem("cartItems") || "[]");
+    setCartItems(items);
+  }, []);
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const tax = subtotal * 0.11; // 11% tax
   const total = subtotal + tax;
 
   const updateQuantity = (id: number, change: number) => {
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
+    const updatedItems = cartItems.map(item =>
+      item.id === id
+        ? { ...item, quantity: Math.max(1, item.quantity + change) }
+        : item
     );
+    setCartItems(updatedItems);
+    localStorage.setItem("cartItems", JSON.stringify(updatedItems));
+  };
+
+  const removeItem = (id: number) => {
+    const updatedItems = cartItems.filter(item => item.id !== id);
+    setCartItems(updatedItems);
+    localStorage.setItem("cartItems", JSON.stringify(updatedItems));
   };
 
   return (
@@ -89,7 +92,7 @@ const Cart = () => {
                         variant="ghost"
                         size="icon"
                         className="text-red-500"
-                        onClick={() => setCartItems(items => items.filter(i => i.id !== item.id))}
+                        onClick={() => removeItem(item.id)}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -134,10 +137,7 @@ const Cart = () => {
                 </Button>
               </div>
 
-              <Button className="w-full" size="lg">
-                <CreditCard className="mr-2 h-5 w-5" />
-                Proceed to Payment
-              </Button>
+              <PaymentDialog total={total} />
             </CardContent>
           </Card>
         </div>
