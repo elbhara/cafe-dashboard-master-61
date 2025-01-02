@@ -1,15 +1,10 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
-import { Coffee, ShoppingCart, X } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { ProductCard } from "@/components/catalog/ProductCard";
+import { ProductDetailDialog } from "@/components/catalog/ProductDetailDialog";
+import { SearchBar } from "@/components/catalog/SearchBar";
+import { Coffee } from "lucide-react";
 
 interface Product {
   id: string;
@@ -32,6 +27,7 @@ const Index = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -45,9 +41,15 @@ const Index = () => {
     }
   }, []);
 
-  const filteredProducts = selectedCategory === "all" 
-    ? products 
-    : products.filter(product => product.category === selectedCategory);
+  const filteredProducts = products
+    .filter(product => 
+      (selectedCategory === "all" || product.category === selectedCategory) &&
+      (searchQuery === "" || 
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.sku.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
 
   const addToCart = (product: Product) => {
     if (product.stock <= 0) {
@@ -92,30 +94,34 @@ const Index = () => {
           <p className="text-gray-500 mt-2">Discover our delicious offerings</p>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          <button
-            onClick={() => setSelectedCategory("all")}
-            className={`px-4 py-2 rounded-full whitespace-nowrap ${
-              selectedCategory === "all"
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            All Items
-          </button>
-          {categories.map((category) => (
+        <div className="space-y-4">
+          <SearchBar value={searchQuery} onChange={setSearchQuery} />
+
+          <div className="flex gap-4 overflow-x-auto pb-2">
             <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.name)}
+              onClick={() => setSelectedCategory("all")}
               className={`px-4 py-2 rounded-full whitespace-nowrap ${
-                selectedCategory === category.name
+                selectedCategory === "all"
                   ? "bg-primary text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {category.name}
+              All Items
             </button>
-          ))}
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.name)}
+                className={`px-4 py-2 rounded-full whitespace-nowrap ${
+                  selectedCategory === category.name
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
         </div>
 
         {filteredProducts.length === 0 ? (
@@ -127,121 +133,21 @@ const Index = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <Card key={product.id} className="flex flex-col hover:shadow-lg transition-shadow duration-200">
-                <div 
-                  className="aspect-square w-full overflow-hidden rounded-t-lg cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
-                >
-                  <img
-                    src={product.image || "https://via.placeholder.com/300"}
-                    alt={product.name}
-                    className="h-full w-full object-cover hover:scale-105 transition-transform duration-200"
-                  />
-                </div>
-                <CardContent className="p-4 flex flex-col flex-grow">
-                  <div className="flex-grow">
-                    <h3 
-                      className="font-semibold text-lg text-gray-900 cursor-pointer hover:text-primary"
-                      onClick={() => setSelectedProduct(product)}
-                    >
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{product.description}</p>
-                    <div className="mt-2 space-y-1">
-                      <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                      <p className="text-sm text-gray-500">
-                        Stock: <span className={product.stock <= 5 ? "text-red-500 font-medium" : ""}>
-                          {product.stock} units
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    <p className="text-xl font-bold text-primary">
-                      {new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR'
-                      }).format(product.price)}
-                    </p>
-                    <Button
-                      className="w-full"
-                      onClick={() => addToCart(product)}
-                      disabled={product.stock <= 0}
-                      variant={product.stock <= 0 ? "secondary" : "default"}
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      {product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <ProductCard
+                key={product.id}
+                product={product}
+                onProductClick={setSelectedProduct}
+                onAddToCart={addToCart}
+              />
             ))}
           </div>
         )}
 
-        <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-          {selectedProduct && (
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle className="text-2xl">{selectedProduct.name}</DialogTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-4 top-4"
-                  onClick={() => setSelectedProduct(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="aspect-square overflow-hidden rounded-lg">
-                    <img
-                      src={selectedProduct.image || "https://via.placeholder.com/500"}
-                      alt={selectedProduct.name}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-semibold text-gray-500">Description</h3>
-                    <p className="mt-2 text-gray-700">{selectedProduct.description}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-500">SKU: {selectedProduct.sku}</p>
-                    <p className="text-sm text-gray-500">Category: {selectedProduct.category}</p>
-                    <p className="text-sm text-gray-500">
-                      Stock: <span className={selectedProduct.stock <= 5 ? "text-red-500 font-medium" : ""}>
-                        {selectedProduct.stock} units
-                      </span>
-                    </p>
-                  </div>
-                  <div className="space-y-4">
-                    <p className="text-2xl font-bold text-primary">
-                      {new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR'
-                      }).format(selectedProduct.price)}
-                    </p>
-                    <Button
-                      className="w-full"
-                      onClick={() => {
-                        addToCart(selectedProduct);
-                        setSelectedProduct(null);
-                      }}
-                      disabled={selectedProduct.stock <= 0}
-                      variant={selectedProduct.stock <= 0 ? "secondary" : "default"}
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      {selectedProduct.stock <= 0 ? "Out of Stock" : "Add to Cart"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          )}
-        </Dialog>
+        <ProductDetailDialog
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAddToCart={addToCart}
+        />
       </div>
     </MainLayout>
   );
