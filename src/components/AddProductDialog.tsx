@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,14 +17,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { CategoryDialog } from "./CategoryDialog";
 
-const CATEGORIES = ["Beverages", "Food", "Desserts"];
+interface Category {
+  id: number;
+  name: string;
+}
 
 export function AddProductDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [mainImage, setMainImage] = useState<File | null>(null);
+  const [galleryImages, setGalleryImages] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
@@ -32,11 +39,33 @@ export function AddProductDialog() {
     price: "",
     description: "",
     category: "",
-    image: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const storedCategories = JSON.parse(localStorage.getItem("categories") || "[]");
+    setCategories(storedCategories);
+  }, [open]); // Refresh categories when dialog opens
+
+  const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setMainImage(e.target.files[0]);
+    }
+  };
+
+  const handleGalleryImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setGalleryImages(Array.from(e.target.files));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Convert images to base64
+    const mainImageBase64 = mainImage ? await convertToBase64(mainImage) : "";
+    const galleryImagesBase64 = await Promise.all(
+      galleryImages.map(img => convertToBase64(img))
+    );
     
     // Get existing products
     const existingProducts = JSON.parse(localStorage.getItem("products") || "[]");
@@ -45,6 +74,8 @@ export function AddProductDialog() {
     const newProduct = {
       id: Date.now(),
       ...formData,
+      image: mainImageBase64,
+      gallery: galleryImagesBase64,
       price: Number(formData.price),
       stock: Number(formData.stock),
     };
@@ -69,9 +100,19 @@ export function AddProductDialog() {
       price: "",
       description: "",
       category: "",
-      image: "",
     });
+    setMainImage(null);
+    setGalleryImages([]);
     setOpen(false);
+  };
+
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
   };
 
   return (
@@ -99,15 +140,32 @@ export function AddProductDialog() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="image">Image URL</Label>
-            <Input
-              id="image"
-              required
-              value={formData.image}
-              onChange={(e) =>
-                setFormData({ ...formData, image: e.target.value })
-              }
-            />
+            <Label htmlFor="mainImage">Main Image</Label>
+            <div className="flex gap-2 items-center">
+              <Input
+                id="mainImage"
+                type="file"
+                accept="image/*"
+                required
+                onChange={handleMainImageChange}
+                className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+              />
+              <Upload className="h-4 w-4 text-gray-400" />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="gallery">Gallery Images</Label>
+            <div className="flex gap-2 items-center">
+              <Input
+                id="gallery"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleGalleryImagesChange}
+                className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+              />
+              <Upload className="h-4 w-4 text-gray-400" />
+            </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="sku">SKU</Label>
@@ -145,7 +203,10 @@ export function AddProductDialog() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="category">Category</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="category">Category</Label>
+              <CategoryDialog />
+            </div>
             <Select
               required
               value={formData.category}
@@ -157,9 +218,9 @@ export function AddProductDialog() {
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.name}>
+                    {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>
