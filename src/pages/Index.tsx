@@ -13,9 +13,14 @@ interface Product {
   stock: number;
 }
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   useEffect(() => {
@@ -54,15 +59,15 @@ const Index = () => {
           </button>
           {categories.map((category) => (
             <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
+              key={category.id}
+              onClick={() => setSelectedCategory(category.name)}
               className={`px-4 py-2 rounded-full whitespace-nowrap ${
-                selectedCategory === category
+                selectedCategory === category.name
                   ? "bg-primary text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {category}
+              {category.name}
             </button>
           ))}
         </div>
